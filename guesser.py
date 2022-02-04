@@ -1,3 +1,5 @@
+import random
+
 WORDLENGTH = 5
 
 class Guesser:
@@ -38,17 +40,31 @@ class Guesser:
         return (1 - filter_factor)
   
     def word_filter_factor_naive(self, word):
-        """Compute the filter factor of a word. Naively the product of the filter factors of the character sequence (with special handling for duplicate chars)"""
+        """Compute the filter factor of a word. Naively the product of the filter factors of the character sequence (with special handling for duplicate chars)"""  
         accumulator = 1
+
+        # # Factor in chance of getting it in one. Biases towards guessing from wordlist as number of options narrows
+        # if word in self.words:
+        #     if len(self.words) == 1:
+        #         return 0  
+        #     else:
+        #         accumulator *= 1 - (1 / len(self.words))
+
+        # Computer characterwise filtering factors
         for idx, char in enumerate(word):
             is_first = word.index(char) == idx # Only first occurence of character in a word gives information about Case 2 and 3 in char_filter_factor
             factor = self.char_filter_factor(char, idx, is_first)
             accumulator *= factor
+
         return accumulator
     
     def get_guess(self):
         """Get the best guess given the wordlist"""
         return max(self.words, key=lambda word: -1 * self.word_filter_factor_naive(word))
+
+    def get_random(self):
+        """Get a random guess from the wordlist. Proxy for human play"""
+        return random.choice(list(self.words))
 
     def get_letter_frequencies(word_list):
         """Compute indexed and non-indexed frequency distributions"""
@@ -66,14 +82,3 @@ class Guesser:
     def hist_to_probs(hist):
         """Given a dictionary of counts, return a dictionary of probabilities"""
         return {key: value / sum(hist.values()) for key, value in hist.items()}
-
-def strip_newlines(wordlist):
-    """Strip whitespace from a list of strings"""
-    return [w.strip() for w in wordlist]
-
-if __name__ == "__main__":
-    with open('wordlist.txt', 'r') as file:
-        words = set(strip_newlines(file.readlines()))
-    with open('allowed_guesses.txt', 'r') as file:
-        guesses = set(strip_newlines(file.readlines())).union(words) # Wordle keeps them as separate lists, but makes sense for our purposes to treat valid answers as a subset of guesses
-    print(Guesser(words, guesses).get_guess())
